@@ -12,17 +12,20 @@ const player = "p"
 const stone = "s"
 const background = "b"
 const mask = "m"
-const maskLost = "l"
-const screenTransitionTop = "0"
-const screenTransitionLeft = "1"
-const screenTransitionRight = "2"
-const screenTransitionBottom = "3"
+const maskLost = "d"
+const screenTransitionTop = "i"
+const screenTransitionLeft = "j"
+const screenTransitionRight = "l"
+const screenTransitionBottom = "k"
 const grass = "g"
 const backgroundGrass = "t"
+const acid = "a"
+
 
 const movementY = 2
 const movement = 1
 
+var lives = 3
 
 
 setLegend(
@@ -212,7 +215,24 @@ DDDDDDDDDDDDDDDD`],
 4444444444444444
 4444444444444444
 4444444444444444
-4444444444444444`]
+4444444444444444`],
+  [ acid, bitmap `
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFF`]
 
 )
 
@@ -223,17 +243,17 @@ setBackground(background)
 let level = 0
 const levels = [
   map `
-ssssssssss000s
+ssssssssssiiis
 s............s
 s............s
-s......sssssss
-s.ssss.......s
+s.....ssssssss
+s...ss.......s
 s............s
-s....ssss....s
+s..ssss......s
 sp...........s
-sssssssssss33s`,
+ssssssssssskks`,
   map `
-sssssssssss000
+sssssssssssiii
 s...........p.
 s..sssssssssss
 s............s
@@ -243,32 +263,39 @@ sssss.....ssss
 sssss........s
 ssssssssssssss`,
   map `
-ssssssssss000s
+ssssssssssiiis
 s............s
 s........sssss
 s....s...sssss
 s...ssssss.s.s
 s.ssssssss...s
-1............s
-sss......p...s
-sssssssssss33s`,
+jp...........s
+sss..........s
+ssssssssssskks`,
   map `
 gggggggggggggg
-1............g
-1..g.........g
-gg...g.......g
-gggggg.......g
-g....gg......g
-g.....ggggg.p2
+j............g
+j............g
+ggaaaaag.....g
+ggggggggg....g
+g....ggggg...g
+g.....ggggg.pl
 g...........gg
-g33ggggggggggg`
+gkkggggggggggg`,
+  map `
+giigggggggggg
+ggp.........g
+ggggg.......g
+gggggg......g
+ggggggggggggg`
 ]
 
 const levelsDir = {
      "R0":[[2, 9, 7], null, null, [1, 12, 1]],
      "R1":[[0, 9, 7], null, null, null], 
      "R2":["", [3, 10, 6], null, [0, 10, 2]],
-     "R3":[null, "", [2, 2, 6], ""]
+     "R3":[null, "", [2, 1, 6], [4, 2, 1]],
+     "R4":[[3, 4, 7], null, null, null],
 };
 
 setMap(levels[level])
@@ -308,24 +335,33 @@ function moveDown(sprite){
       }
     }, 300);
 }
+  
 
 function checkInteraction(sprite1, lvl){
+  const arr = ["i", "j", "l", "k"]
   knightCoords = getTile(getFirst(sprite1).x, getFirst(sprite1).y)
   currentLevel = "R" + lvl
   for (roomDirection in [0,1,2,3]){
-    if (knightCoords.find(sprite => sprite.type == roomDirection)){
-      console.log(currentLevel)
-      console.log(roomDirection)
+    if (knightCoords.find(sprite => sprite.type == arr[roomDirection]) && (levelsDir[currentLevel][roomDirection])){
       roomInfo = levelsDir[currentLevel][roomDirection]
       level = roomInfo[0]
-      console.log("respawning at" + roomInfo[1] + roomInfo[2])
+      //console.log("respawning in" + roomInfo[0] + "at" + roomInfo[1] + "," + roomInfo[2])
       setMap(levels[level])
       getFirst(sprite1).x = roomInfo[1]
       getFirst(sprite1).y = roomInfo[2]
         }
   }
-  }
+}
 
+function checkHazard(sprite, hazard, respawnCoords){
+    knightCoords = getTile(getFirst(sprite).x, (getFirst(sprite).y))
+    if (knightCoords.find(sprite => sprite.type == hazard)){
+      lives -= 1
+      console.log(lives)
+      getFirst(sprite).x = respawnCoords[0]
+      getFirst(sprite).y = respawnCoords[1]
+    }
+}
 
 // Directions or smth yay
 onInput("w", () => {
@@ -334,13 +370,11 @@ onInput("w", () => {
       getFirst(player).y -= movement;
       moveDown(getFirst(player))
   }
-
 })
 
 onInput("a", () => {
   getFirst(player).x -= movement;
   if (!(groundCheck(getFirst(player)))){
-      getFirst(player).x -= movement;
       moveDown(getFirst(player))
   }})
 
@@ -349,7 +383,6 @@ onInput("a", () => {
 onInput("d", () => {
   getFirst(player).x += movement;
   if (!(groundCheck(getFirst(player)))){
-      getFirst(player).x += movement;
       moveDown(getFirst(player))
   }})
 
@@ -357,4 +390,5 @@ onInput("d", () => {
 afterInput(() => {
   console.log(getFirst(player).x, getFirst(player).y)
   checkInteraction(player, level)
-  })
+  checkHazard(player, acid, [7,1])
+})
