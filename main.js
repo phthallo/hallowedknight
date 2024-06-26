@@ -1,0 +1,360 @@
+/*
+First time? Check out the tutorial game:
+https://sprig.hackclub.com/gallery/getting_started
+
+@title: 
+@author: 
+@tags: []
+@addedOn: 2024-00-00
+*/
+
+const player = "p"
+const stone = "s"
+const background = "b"
+const mask = "m"
+const maskLost = "l"
+const screenTransitionTop = "0"
+const screenTransitionLeft = "1"
+const screenTransitionRight = "2"
+const screenTransitionBottom = "3"
+const grass = "g"
+const backgroundGrass = "t"
+
+const movementY = 2
+const movement = 1
+
+
+
+setLegend(
+  [ player, bitmap`
+................
+..000......000..
+..020......020..
+..020......020..
+...0200000020...
+...0022222200...
+....02022020....
+....02022020....
+....02222220....
+.....022220.....
+.....000000.....
+....00LLLL00....
+....0LLLLLL0....
+....0LLLLLL0....
+....00LLLL00....
+.....00LL00.....` ],
+  [ mask, bitmap `
+................
+................
+....11111111....
+...1111111111...
+...1111111111...
+...1111111111...
+...11LL11LL11...
+...11LL11LL11...
+...11LL11LL11...
+...1111111111...
+...1111111111...
+...1111111111...
+....11111111....
+......1111......
+................
+................`],
+  [ maskLost, bitmap `
+................
+................
+....11111101....
+...1111000011...
+...1111001111...
+...1111001110...
+...1111000000...
+...1110000000...
+...1100000111...
+...0001100111...
+...0111110111...
+...1111110001...
+....11111110....
+......1111......
+................
+................`],
+  [ screenTransitionTop, bitmap `
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................`],
+  [ screenTransitionLeft, bitmap `
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............
+LLL.............`],
+  [ screenTransitionRight, bitmap `
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL
+.............LLL`],
+  [ screenTransitionBottom, bitmap `
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL`],
+  [ stone, bitmap `
+1111111111111111
+1111111111LL1111
+11LLLLL111LL11L1
+1111LLL111LL1111
+1LL1LLL111LL1111
+LL1LLLL1000L11LL
+LL111111110L110L
+LLLLL111110L110L
+000001LLL111110L
+111111LL011111L1
+001L00111110L1L1
+L000011100011111
+LL1LL1000LL11111
+LLLL11111110LLL1
+1LLL11LL1100LLL1
+1LLLL1111LL11111`],
+  [ background, bitmap `
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111
+1111111111111111`],
+  [ grass, bitmap `
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD
+DDDDDDDDDDDDDDDD`],
+  [ backgroundGrass, bitmap `
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444
+4444444444444444`]
+
+)
+
+setSolids([player, stone, grass])
+
+setBackground(background)
+
+let level = 0
+const levels = [
+  map `
+ssssssssss000s
+s............s
+s............s
+s......sssssss
+s.ssss.......s
+s............s
+s....ssss....s
+sp...........s
+sssssssssss33s`,
+  map `
+sssssssssss000
+s...........p.
+s..sssssssssss
+s............s
+ss...........s
+sssssssss....s
+sssss.....ssss
+sssss........s
+ssssssssssssss`,
+  map `
+ssssssssss000s
+s............s
+s........sssss
+s....s...sssss
+s...ssssss.s.s
+s.ssssssss...s
+1............s
+sss......p...s
+sssssssssss33s`,
+  map `
+gggggggggggggg
+1............g
+1..g.........g
+gg...g.......g
+gggggg.......g
+g....gg......g
+g.....ggggg.p2
+g...........gg
+g33ggggggggggg`
+]
+
+const levelsDir = {
+     "R0":[[2, 9, 7], null, null, [1, 12, 1]],
+     "R1":[[0, 9, 7], null, null, null], 
+     "R2":["", [3, 10, 6], null, [0, 10, 2]],
+     "R3":[null, "", [2, 2, 6], ""]
+};
+
+setMap(levels[level])
+
+setPushables({
+  [ player ]: []
+})
+
+
+// ceiling is above head check
+function ceilingCheck(sprite){
+  var yPos = sprite.y
+  sprite.y -= movement // try to move the sprite up
+  if (sprite.y == yPos){ // if moving up didnt work
+    return true
+  } else // uh oh move it back
+    sprite.y += movement
+    return false
+}
+
+// is on ground check
+function groundCheck(sprite){
+  var yPos = sprite.y
+  sprite.y += movement // try to move the sprite down
+  if (sprite.y == yPos){
+    // do nothing because apparently javascript doesnt have pass
+    return true
+  } else 
+    sprite.y -= movement // wow the sprite is not currently on the ground! move it back
+    return false
+}
+
+function moveDown(sprite){
+    setTimeout(() => { 
+      while (!(groundCheck(sprite))){
+          sprite.y += movement;
+      }
+    }, 300);
+}
+
+function checkInteraction(sprite1, lvl){
+  knightCoords = getTile(getFirst(sprite1).x, getFirst(sprite1).y)
+  currentLevel = "R" + lvl
+  for (roomDirection in [0,1,2,3]){
+    if (knightCoords.find(sprite => sprite.type == roomDirection)){
+      console.log(currentLevel)
+      console.log(roomDirection)
+      roomInfo = levelsDir[currentLevel][roomDirection]
+      level = roomInfo[0]
+      console.log("respawning at" + roomInfo[1] + roomInfo[2])
+      setMap(levels[level])
+      getFirst(sprite1).x = roomInfo[1]
+      getFirst(sprite1).y = roomInfo[2]
+        }
+  }
+  }
+
+
+// Directions or smth yay
+onInput("w", () => {
+  if (!(ceilingCheck(getFirst(player)))){
+      getFirst(player).y -= movement;
+      getFirst(player).y -= movement;
+      moveDown(getFirst(player))
+  }
+
+})
+
+onInput("a", () => {
+  getFirst(player).x -= movement;
+  if (!(groundCheck(getFirst(player)))){
+      getFirst(player).x -= movement;
+      moveDown(getFirst(player))
+  }})
+
+
+
+onInput("d", () => {
+  getFirst(player).x += movement;
+  if (!(groundCheck(getFirst(player)))){
+      getFirst(player).x += movement;
+      moveDown(getFirst(player))
+  }})
+
+
+afterInput(() => {
+  console.log(getFirst(player).x, getFirst(player).y)
+  checkInteraction(player, level)
+  })
