@@ -2,9 +2,9 @@
 First time? Check out the tutorial game:
 https://sprig.hackclub.com/gallery/getting_started
 
-@title: 
-@author: 
-@tags: []
+@title: Hallowed Knight
+@author: phthallo
+@tags: [metroidvania]
 @addedOn: 2024-00-00
 */
 
@@ -20,8 +20,9 @@ const screenTransitionBottom = "k"
 const grass = "g"
 const backgroundGrass = "t"
 const acid = "a"
-
-
+const black = "e"
+const chest = "c"
+const key = "h"
 const movementY = 2
 const movement = 1
 
@@ -45,41 +46,58 @@ setLegend(
 ....0LLLLLL0....
 ....0LLLLLL0....
 ....00LLLL00....
-.....00LL00.....`],
+.....00LL00.....`], 
+  // UI ELEMENTS
   [maskLost, bitmap `
 ................
-................
-....00000000....
-...0011000000...
-...0111001110...
-...0111001110...
-...0111000000...
-...0110000000...
-...0100000110...
-...0001100110...
-...0111110110...
-...0011110000...
-....00011000....
-......0000......
-................
+....22222222....
+...2000000002...
+..200110000002..
+..201110011102..
+..201110011102..
+..201110000002..
+..201100000002..
+..201000001102..
+..200011001102..
+..201111101102..
+..200111100002..
+...2000110002...
+....22000022....
+......2222......
 ................`],
-
   [mask, bitmap `
 ................
-.....000000.....
-....00000000....
-...0111111110...
-...0111111110...
-...0111111110...
-...01LL11LL10...
-...01LL11LL10...
-...01LL11LL10...
-...0111111110...
-...0111111110...
-...0011111100...
-....00011000....
-......0000......
-.......00.......
+....22222222....
+...2000000002...
+..201111111102..
+..201111111102..
+..201111111102..
+..201LL11LL102..
+..201LL11LL102..
+..201LL11LL102..
+..201111111102..
+..201111111102..
+..200111111002..
+...2000110002...
+....22000022....
+......2002......
+.......22.......`],
+  [key, bitmap `
+................
+..........6666..
+.........666666.
+.........66..66.
+.........66..66.
+.........666666.
+........666666..
+.......666......
+......666.......
+.....666........
+....66666.......
+...666..6.......
+.....66..6......
+......6.........
+.......6........
 ................`],
   [screenTransitionTop, bitmap `
 LLLLLLLLLLLLLLLL
@@ -149,6 +167,24 @@ LLL.............`],
 LLLLLLLLLLLLLLLL
 LLLLLLLLLLLLLLLL
 LLLLLLLLLLLLLLLL`],
+  // OTHER STUFF
+  [chest, bitmap `
+................
+................
+................
+................
+................
+................
+..000......000..
+..0F00000000F0..
+..0FCCCCCCCCF0..
+..0FFFF11FFFF0..
+..0FCCC11CCCF0..
+..0FCCCCCCCCF0..
+..0FCCCCCCCCF0..
+..0FCCCCCCCCF0..
+..0FCCCCCCCCF0..
+..000000000000..`],
   [stone, bitmap `
 1111111111111111
 1111111111LL1111
@@ -233,8 +269,24 @@ FFFFFFFFFFFFFFFF
 FFFFFFFFFFFFFFFF
 FFFFFFFFFFFFFFFF
 FFFFFFFFFFFFFFFF
-FFFFFFFFFFFFFFFF`]
-
+FFFFFFFFFFFFFFFF`],
+  [black, bitmap `
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000`],
 )
 
 setSolids([player, stone, grass])
@@ -261,7 +313,7 @@ s............s
 ss...........s
 sssssssss....s
 sssss.....ssss
-sssss........s
+sssss.......cs
 ssssssssssssss`,
   map `
 ssssssssssiiis
@@ -288,8 +340,29 @@ giigggggggggg
 ggp.........g
 ggggg.......g
 gggggg......g
-ggggggggggggg`
+ggggggggggggg`,
+  map `
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee`
 ]
+
+// How to interpret the levelsDir => 
+// Each key refers to a room. The values of each room are represented
+// by a list. This list features the information for the room 
+// transition to the top, left, right and bottom transitions.
+// If the transition is null, there is no transition on that side of the room.
+// The first element of the list (e.g [2, 9, 7], with the first element being 2
+// represents the room that the transition leads to.
+// The second and third elements represent the coordinates of the spawn position.
+// This is because you can enter a room from multiple directions, and where the Knight
+// spawns should reflect that.
 
 const levelsDir = {
   "R0": [
@@ -317,7 +390,8 @@ setPushables({
 updateHealth()
 
 
-// ceiling is above head check
+// Jumps are two units, and if we don't check if there are platforms
+// directly above the Knight it will simply move through it.
 function ceilingCheck(sprite) {
   var yPos = sprite.y
   sprite.y -= movement // try to move the sprite up
@@ -328,7 +402,7 @@ function ceilingCheck(sprite) {
   return false
 }
 
-// is on ground check
+// Check if the Knight is currently on a platform.
 function groundCheck(sprite) {
   var yPos = sprite.y
   sprite.y += movement // try to move the sprite down
@@ -340,6 +414,7 @@ function groundCheck(sprite) {
   return false
 }
 
+// While the Knight is not on the ground, move downwards.
 function moveDown(sprite) {
   setTimeout(() => {
     while (!(groundCheck(sprite))) {
@@ -348,7 +423,7 @@ function moveDown(sprite) {
   }, 300);
 }
 
-
+// Room transitions + regenerate the UI
 function checkInteraction(sprite1, lvl) {
   const arr = ["i", "j", "l", "k"]
   knightCoords = getTile(getFirst(sprite1).x, getFirst(sprite1).y)
@@ -379,12 +454,14 @@ function checkHazard(sprite, hazard, respawnCoords) {
 
 function updateHealth(){
   for (let i = 0; i < 3; i++){ // 
-    for (let j = 0; j < lives; j++){
-      addSprite(j,0, mask)
-    }
-      addSprite(3-lives,0, maskLost)
+    if (i < lives){
+      addSprite(i,0, mask)
+    } else
+      addSprite(i,0, maskLost)    
   }
-
+}
+function updateInv(item){
+  addSprite(0,1, key)
 }
 
 // Directions or smth yay
@@ -404,11 +481,22 @@ onInput("a", () => {
 })
 
 
-
 onInput("d", () => {
   getFirst(player).x += movement;
   if (!(groundCheck(getFirst(player)))) {
     moveDown(getFirst(player))
+  }
+})
+
+onInput("k", () => {
+  knightCoords = getTile(getFirst(player).x, getFirst(player).y)
+  if (knightCoords.find(sprite => sprite.type == chest)) {
+      addText("chest opened", {
+      x: 0,
+      y: 15,
+      color: color`2`})
+    updateInv(key)
+
   }
 })
 
@@ -417,4 +505,10 @@ afterInput(() => {
   console.log(getFirst(player).x, getFirst(player).y)
   checkInteraction(player, level)
   checkHazard(player, acid, [8, 3])
-})
+  if (lives == 0){
+    setMap(levels[levels.length-1])
+    addText("~GAME OVER~", {
+      x: 5,
+      y: 7,
+      color: color`2`})
+}})
