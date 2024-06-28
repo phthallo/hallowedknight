@@ -8,6 +8,8 @@ https://sprig.hackclub.com/gallery/getting_started
 @addedOn: 2024-00-00
 */
 
+// Definitely not inspired by Hollow Knight.
+
 const mask = "m"
 const maskLost = "d"
 const player = "p"
@@ -23,30 +25,16 @@ const acid = "a"
 const black = "e"
 const chest = "c"
 const key = "h"
+const currency ="n"
+
 const movementY = 2
 const movement = 1
 
 var lives = 3
+var inventory = []
 
 
 setLegend(
-  [player, bitmap`
-................
-..000......000..
-..020......020..
-..020......020..
-...0200000020...
-...0022222200...
-....02022020....
-....02022020....
-....02222220....
-.....022220.....
-.....000000.....
-....00LLLL00....
-....0LLLLLL0....
-....0LLLLLL0....
-....00LLLL00....
-.....00LL00.....`], 
   // UI ELEMENTS
   [maskLost, bitmap `
 ................
@@ -99,6 +87,40 @@ setLegend(
 ......6.........
 .......6........
 ................`],
+  [currency, bitmap `
+....22222222....
+...2000000002...
+..206666666602..
+.20666666666602.
+20662FFFFFF66602
+2062226666626602
+2066266666626602
+2066F66666626602
+2066F66666626602
+2066F66666626602
+2066F66666626602
+2066622222266602
+.20666666666602.
+..206666666602..
+...2000000002...
+....22222222....`],
+  [player, bitmap`
+................
+..000......000..
+..020......020..
+..020......020..
+...0200000020...
+...0022222200...
+....02022020....
+....02022020....
+....02222220....
+.....022220.....
+.....000000.....
+....00LLLL00....
+....0LLLLLL0....
+....0LLLLLL0....
+....00LLLL00....
+.....00LL00.....`], 
   [screenTransitionTop, bitmap `
 LLLLLLLLLLLLLLLL
 LLLLLLLLLLLLLLLL
@@ -388,7 +410,7 @@ setPushables({
 
 // generate masks
 updateHealth()
-
+addSprite(0,1, currency)
 
 // Jumps are two units, and if we don't check if there are platforms
 // directly above the Knight it will simply move through it.
@@ -436,9 +458,13 @@ function checkInteraction(sprite1, lvl) {
       setMap(levels[level])
       getFirst(sprite1).x = roomInfo[1]
       getFirst(sprite1).y = roomInfo[2]
+      // Refresh UI
+      clearText()
       updateHealth()
-    }
+      updateInv()
+      addSprite(0,1, currency)
   }
+}
 }
 
 function checkHazard(sprite, hazard, respawnCoords) {
@@ -453,15 +479,21 @@ function checkHazard(sprite, hazard, respawnCoords) {
 }
 
 function updateHealth(){
-  for (let i = 0; i < 3; i++){ // 
+  for (let i = 0; i < 3; i++){ 
     if (i < lives){
       addSprite(i,0, mask)
     } else
       addSprite(i,0, maskLost)    
   }
 }
-function updateInv(item){
-  addSprite(0,1, key)
+
+function updateInv(item=null){
+  if (item){
+    inventory.push(item)
+  }
+  for (let i = 0; i < inventory.length; i++){
+    addSprite(i + 2, 1, inventory[i])
+  }
 }
 
 // Directions or smth yay
@@ -491,14 +523,12 @@ onInput("d", () => {
 onInput("k", () => {
   knightCoords = getTile(getFirst(player).x, getFirst(player).y)
   if (knightCoords.find(sprite => sprite.type == chest)) {
-      addText("chest opened", {
+      addText("KEY obtained", {
       x: 0,
       y: 15,
       color: color`2`})
-    updateInv(key)
-
-  }
-})
+      updateInv(key)
+}})
 
 
 afterInput(() => {
