@@ -26,13 +26,16 @@ const black = "e"
 const chest = "c"
 const key = "h"
 const currency ="n"
+const keyGate = "w"
 
 const movementY = 2
 const movement = 1
 
 var lives = 3
 var inventory = []
+var money = 0
 
+var keyGateOpen = false
 
 setLegend(
   // UI ELEMENTS
@@ -54,7 +57,6 @@ setLegend(
 ......2222......
 ................`],
   [mask, bitmap `
-................
 ....22222222....
 ...2000000002...
 ..201111111102..
@@ -69,7 +71,8 @@ setLegend(
 ...2000110002...
 ....22000022....
 ......2002......
-.......22.......`],
+.......22.......
+................`],
   [key, bitmap `
 ................
 ..........6666..
@@ -190,6 +193,23 @@ LLLLLLLLLLLLLLLL
 LLLLLLLLLLLLLLLL
 LLLLLLLLLLLLLLLL`],
   // OTHER STUFF
+  [keyGate, bitmap `
+.....000000.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....0LLLL0.....
+.....000000.....`],
   [chest, bitmap `
 ................
 ................
@@ -208,22 +228,22 @@ LLLLLLLLLLLLLLLL`],
 ..0FCCCCCCCCF0..
 ..000000000000..`],
   [stone, bitmap `
-1111111111111111
-1111111111LL1111
-11LLLLL111LL11L1
-1111LLL111LL1111
-1LL1LLL111LL1111
-LL1LLLL1000L11LL
-LL111111110L110L
-LLLLL111110L110L
-000001LLL111110L
-111111LL011111L1
-001L00111110L1L1
-L000011100011111
-LL1LL1000LL11111
-LLLL11111110LLL1
-1LLL11LL1100LLL1
-1LLLL1111LL11111`],
+0000000000000000
+0111111111LL1110
+01LLLLL111LL11L0
+0111LLL111LL1110
+0LL1LLL111LL1110
+0L1LLLL1000L11L0
+0L111111110L11L0
+0LLLL111110L11L0
+000001LLL11111L0
+011111LL011111L0
+001L00111110L1L0
+0000011100011110
+0L1LL1000LL11110
+0LLL11111110LLL0
+0LLL11LL1100LLL0
+0000000000000000`],
   [background, bitmap `
 1111111111111111
 1111111111111111
@@ -242,22 +262,22 @@ LLLL11111110LLL1
 1111111111111111
 1111111111111111`],
   [grass, bitmap `
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD
-DDDDDDDDDDDDDDDD`],
+0000000000000000
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0DDDDDDDDDDDDDD0
+0000000000000000`],
   [backgroundGrass, bitmap `
 4444444444444444
 4444444444444444
@@ -311,7 +331,7 @@ FFFFFFFFFFFFFFFF`],
 0000000000000000`],
 )
 
-setSolids([player, stone, grass])
+setSolids([player, stone, grass, keyGate])
 
 setBackground(background)
 
@@ -328,8 +348,8 @@ s..ssss......s
 sp...........s
 ssssssssssskks`,
   map `
-sssssssssssiii
-s...........p.
+sssssssssssiis
+s...........ps
 s..sssssssssss
 s............s
 ss...........s
@@ -339,9 +359,9 @@ sssss.......cs
 ssssssssssssss`,
   map `
 ssssssssssiiis
-s............s
-s........sssss
-s....s...sssss
+s........w...s
+s.....ssssssss
+s....sssssssss
 s...ssssss.s.s
 s.ssssssss...s
 jp...........s
@@ -358,11 +378,15 @@ g.....ggggg.pl
 g...........gg
 gkkggggggggggg`,
   map `
-giigggggggggg
-ggp.........g
-ggggg.......g
-gggggg......g
-ggggggggggggg`,
+giiggggggggggg
+ggp..........g
+ggggg........g
+gggggg......cg
+gggggggggggggg
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee
+eeeeeeeeeeeeee`,
   map `
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
@@ -388,17 +412,17 @@ eeeeeeeeeeeeee`
 
 const levelsDir = {
   "R0": [
-    [2, 9, 7], null, null, [1, 12, 1]
+    [2, 9, 7], null, null, [1, 12, 1], background
   ],
   "R1": [
-    [0, 9, 7], null, null, null
+    [0, 9, 7], null, null, null, background
   ],
-  "R2": ["", [3, 10, 6], null, [0, 10, 2]],
+  "R2": ["", [3, 10, 6], null, [0, 10, 2], background],
   "R3": [null, "", [2, 1, 6],
-    [4, 2, 1]
+    [4, 2, 1], backgroundGrass
   ],
   "R4": [
-    [3, 4, 7], null, null, null
+    [3, 4, 7], null, null, null, backgroundGrass
   ],
 };
 
@@ -411,6 +435,7 @@ setPushables({
 // generate masks
 updateHealth()
 addSprite(0,1, currency)
+updateCurrency(0) 
 
 // Jumps are two units, and if we don't check if there are platforms
 // directly above the Knight it will simply move through it.
@@ -456,12 +481,14 @@ function checkInteraction(sprite1, lvl) {
       level = roomInfo[0]
       //console.log("respawning in" + roomInfo[0] + "at" + roomInfo[1] + "," + roomInfo[2])
       setMap(levels[level])
+      setBackground(levelsDir["R"+level][4])
       getFirst(sprite1).x = roomInfo[1]
       getFirst(sprite1).y = roomInfo[2]
       // Refresh UI
       clearText()
       updateHealth()
       updateInv()
+      updateCurrency(0)
       addSprite(0,1, currency)
   }
 }
@@ -478,6 +505,13 @@ function checkHazard(sprite, hazard, respawnCoords) {
   }
 }
 
+function checkGate(knight){
+  gateCoords = getTile(getFirst(knight).x+1, (getFirst(knight).y))
+  if (gateCoords.find(sprite => sprite.type == keyGate)) {
+    console.log("Knight is standing to left of a keyGate")
+}
+}
+
 function updateHealth(){
   for (let i = 0; i < 3; i++){ 
     if (i < lives){
@@ -492,8 +526,17 @@ function updateInv(item=null){
     inventory.push(item)
   }
   for (let i = 0; i < inventory.length; i++){
-    addSprite(i + 2, 1, inventory[i])
+    addSprite(i, 2, inventory[i])
   }
+}
+
+function updateCurrency(amount){
+  money += amount
+  addText(String(money), { 
+  x: 2,
+  y: 3,
+  color: color`2`
+})
 }
 
 // Directions or smth yay
@@ -528,6 +571,7 @@ onInput("k", () => {
       y: 15,
       color: color`2`})
       updateInv(key)
+      updateCurrency(2)
 }})
 
 
@@ -535,6 +579,7 @@ afterInput(() => {
   console.log(getFirst(player).x, getFirst(player).y)
   checkInteraction(player, level)
   checkHazard(player, acid, [8, 3])
+  checkGate(player)
   if (lives == 0){
     setMap(levels[levels.length-1])
     addText("~GAME OVER~", {
