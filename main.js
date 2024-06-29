@@ -27,13 +27,17 @@ const chest = "c"
 const key = "h"
 const currency ="n"
 const keyGate = "w"
+const dashStatue = "f"
+const dashAbility="u"
 
 const movementY = 2
 const movement = 1
 
+
 var lives = 3
 var inventory = []
 var money = 0
+var lastXInput = ""
 
 var keyGateOpen = false
 
@@ -107,6 +111,23 @@ setLegend(
 ..206666666602..
 ...2000000002...
 ....22222222....`],
+  [dashAbility, bitmap `
+................
+.........0......
+.........0......
+.........0......
+.........0......
+.........0......
+......00.0......
+.....0..00......
+.....0..00......
+.....0...0......
+.....0...0......
+.....00.00......
+......0000......
+.........0......
+................
+................`],
   [player, bitmap`
 ................
 ..000......000..
@@ -193,6 +214,23 @@ LLLLLLLLLLLLLLLL
 LLLLLLLLLLLLLLLL
 LLLLLLLLLLLLLLLL`],
   // OTHER STUFF
+  [dashStatue, bitmap `
+................
+..222......222..
+.21112....21112.
+2111112222111112
+2112111111112112
+2112212112122112
+.212.221122.212.
+.......22.......
+................
+...LLLLLLLLLL...
+......LLLL......
+......LLLL......
+......LLLL......
+......LLLL......
+....LLLLLLLL....
+................`],
   [keyGate, bitmap `
 .....000000.....
 .....0LLLL0.....
@@ -346,17 +384,17 @@ s...ss.......s
 s............s
 s..ssss......s
 sp...........s
-ssssssssssskks`,
+ssssssssssskks`, // spawn room
   map `
 sssssssssssiis
 s...........ps
 s..sssssssssss
 s............s
-ss...........s
-sssssssss....s
+ssssssssss...s
+sssss........s
 sssss.....ssss
 sssss.......cs
-ssssssssssssss`,
+ssssssssssssss`, // room below spawn room w/ chest
   map `
 ssssssssssiiis
 s........w...s
@@ -366,7 +404,7 @@ s...ssssss.s.s
 s.ssssssss...s
 jp...........s
 sss..........s
-ssssssssssskks`,
+ssssssssssskks`, // hub room between grass and stone
   map `
 gggggggggggggg
 j............g
@@ -376,7 +414,7 @@ ggggggggg....g
 g....ggggg...g
 g.....ggggg.pl
 g...........gg
-gkkggggggggggg`,
+gkkggggggggggg`, // grass with acid lake
   map `
 giiggggggggggg
 ggp..........g
@@ -386,7 +424,7 @@ gggggggggggggg
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
-eeeeeeeeeeeeee`,
+eeeeeeeeeeeeee`, // grass with chest
   map `
 sssssssiisssss
 ssssssss.....s
@@ -396,7 +434,17 @@ sssssss......l
 sssssss....sss
 sssssss..sss..
 sssssss....p..
-sssssssssssskk`,
+sssssssssssskk`, // room above hub room
+  map `
+ssssssssssssss
+s............s
+s...ss.......s
+j..ss........s
+jpss....ssssss
+sss..........s
+s...ss.......s
+s...........fs
+ssssssssssssss`, // dash room
   // DEATH
   map `
 eeeeeeeeeeeeee
@@ -436,7 +484,8 @@ const levelsDir = {
   "R4": [
     [3, 4, 7], null, null, null, backgroundGrass
   ],
-  "R5": ["", "", "", "", background],
+  "R5": ["", null, [6, 3, 4], [2, 11 , 1], background],
+  "R6": [null, [5, 12, 4], null, null, background],
 };
 
 setMap(levels[level])
@@ -480,9 +529,12 @@ function moveDown(sprite) {
     while (!(groundCheck(sprite))) {
       sprite.y += movement;
     }
-  }, 300);
+  }, 150);
 }
 
+// Check if the next tiles in front of the knight are free
+function horizontalCheck(sprite){
+}
 // Room transitions + regenerate the UI
 function checkInteraction(sprite1, lvl) {
   const arr = ["i", "j", "l", "k"]
@@ -498,6 +550,9 @@ function checkInteraction(sprite1, lvl) {
       getFirst(sprite1).x = roomInfo[1]
       getFirst(sprite1).y = roomInfo[2]
       // Refresh UI
+      if (keyGateOpen==true && level == 2){
+          getFirst(keyGate).remove()
+      }
       clearText()
       updateHealth()
       updateInv()
@@ -523,6 +578,7 @@ function checkGate(knight){
   if (gateCoords.find(sprite => sprite.type == keyGate) && (inventory.includes("h"))) {
     console.log("Knight is standing to left of a keyGate and has key")
     inventory.splice(inventory.indexOf("h"), 1)
+    keyGateOpen = true
     getFirst(keyGate).remove()
   }
   console.log(inventory)
@@ -566,17 +622,13 @@ onInput("w", () => {
 
 onInput("a", () => {
   getFirst(player).x -= movement;
-  if (!(groundCheck(getFirst(player)))) {
-    moveDown(getFirst(player))
-  }
+  lastXInput = -1
 })
 
 
 onInput("d", () => {
   getFirst(player).x += movement;
-  if (!(groundCheck(getFirst(player)))) {
-    moveDown(getFirst(player))
-  }
+  lastXInput = 1
 })
 
 onInput("k", () => {
@@ -589,12 +641,29 @@ onInput("k", () => {
       updateInv(key)
       updateCurrency(2)
   }
+  if (knightCoords.find(sprite=> sprite.type == dashStatue)){
+      addText("DASH obtained", {
+      x: 0,
+      y: 15,
+      color: color`2`})
+      updateInv(dashAbility)
+  }
   checkGate(player)
   updateInv()
 })
 
+onInput("l", () => {
+  if (inventory.includes(dashAbility)){
+      for (let i = 0; i <= 4; i++){
+        getFirst(player).x += lastXInput
+      }
+  }
+})
 
 afterInput(() => {
+  if (!(groundCheck(getFirst(player)))) {
+    moveDown(getFirst(player))
+  }
   console.log(getFirst(player).x, getFirst(player).y)
   checkInteraction(player, level)
   checkHazard(player, acid, [8, 3])
