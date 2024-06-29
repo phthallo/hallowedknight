@@ -31,7 +31,7 @@ const dashStatue = "f"
 const dashAbility="u"
 const rightSlash = "x"
 const leftSlash = "z"
-
+const tiktik = "q" 
 const movementY = 2
 const movement = 1
 
@@ -40,6 +40,7 @@ var lives = 3
 var inventory = []
 var money = 0
 var lastXInput = ""
+var tiktikHealth = 5
 
 var keyGateOpen = false
 
@@ -250,6 +251,23 @@ LLLLLLLLLLLLLLLL`],
 .........22222..
 ................
 ................`],
+  [tiktik, bitmap `
+................
+................
+................
+................
+................
+................
+................
+................
+................
+..00000000000...
+..022201L1L1L0..
+.0202201L1L1L0..
+.0022201L1L1L0..
+.0222201L1L1L0..
+..000000000000..
+...0.0.0.0.0.0..`],
   [dashStatue, bitmap `
 ................
 ..222......222..
@@ -414,7 +432,7 @@ const levels = [
   map `
 ssssssssssiiis
 s............s
-s............s
+s.......q....s
 s.....ssssssss
 s...ss.......s
 s............s
@@ -445,11 +463,11 @@ ssssssssssskks`, // hub room between grass and stone
 gggggggggggggg
 j............g
 j............g
-ggaaaaag.....g
+gggaaaag.....g
 ggggggggg....g
 g....ggggg...g
 g.....ggggg.pl
-g...........gg
+g......q....gg
 gkkggggggggggg`, // grass with acid lake
   map `
 giiggggggggggg
@@ -475,7 +493,7 @@ sssssssssssskk`, // room above hub room
 ssssssssssssss
 s............s
 s...ss.......s
-j..ss........s
+j..ss......q.s
 jpss....ssssss
 sss..........s
 s...ss.......s
@@ -508,20 +526,20 @@ eeeeeeeeeeeeee`,
 
 const levelsDir = {
   "R0": [
-    [2, 9, 7], null, null, [1, 12, 1], background
+    [2, 9, 7], null, null, [1, 12, 1], background, [[tiktik, [1, 7]]]
   ],
   "R1": [
-    [0, 9, 7], null, null, null, background
+    [0, 9, 7], null, null, null, background, null
   ],
-  "R2": [[5, 10, 7], [3, 10, 6], null, [0, 10, 2], background],
+  "R2": [[5, 10, 7], [3, 10, 6], null, [0, 10, 2], background, null],
   "R3": [null, "", [2, 1, 6],
-    [4, 2, 1], backgroundGrass
+    [4, 2, 1], backgroundGrass, [[acid, [8, 3]], [tiktik, [10, 6]]]
   ],
   "R4": [
-    [3, 4, 7], null, null, null, backgroundGrass
+    [3, 4, 7], null, null, null, backgroundGrass, null
   ],
-  "R5": ["", null, [6, 3, 4], [2, 11 , 1], background],
-  "R6": [null, [5, 12, 4], null, null, background],
+  "R5": ["", null, [6, 3, 4], [2, 11 , 1], background, null],
+  "R6": [null, [5, 12, 4], null, null, background, null],
 };
 
 setMap(levels[level])
@@ -568,9 +586,6 @@ function moveDown(sprite) {
   }, 150);
 }
 
-// Check if the next tiles in front of the knight are free
-function horizontalCheck(sprite){
-}
 // Room transitions + regenerate the UI
 function checkInteraction(sprite1, lvl) {
   const arr = ["i", "j", "l", "k"]
@@ -589,6 +604,7 @@ function checkInteraction(sprite1, lvl) {
       if (keyGateOpen==true && level == 2){
           getFirst(keyGate).remove()
       }
+      tiktikHealth = 5
       clearText()
       updateHealth()
       updateInv()
@@ -599,15 +615,21 @@ function checkInteraction(sprite1, lvl) {
 }
 
 function checkHazard(sprite, hazard, respawnCoords) {
-  knightCoords = getTile(getFirst(sprite).x, (getFirst(sprite).y))
-  if (knightCoords.find(sprite => sprite.type == hazard)) {
-    lives -= 1
-    updateHealth()
-    console.log(lives)
-    getFirst(sprite).x = respawnCoords[0]
-    getFirst(sprite).y = respawnCoords[1]
+  directions = 
+    [getTile(getFirst(sprite).x, (getFirst(sprite).y)),
+     getTile((getFirst(sprite).x), (getFirst(sprite).y)+1),
+     getTile((getFirst(sprite).x), (getFirst(sprite).y)-1)]
+  for (knightCoords in directions){
+    if (directions[knightCoords].find(sprite => sprite.type == hazard)) {
+      lives -= 1
+      updateHealth()
+      console.log(respawnCoords)
+      getFirst(sprite).x = respawnCoords[0]
+      getFirst(sprite).y = respawnCoords[1]
+    }
   }
 }
+
 
 function checkGate(knight){
   gateCoords = getTile(getFirst(knight).x+1, (getFirst(knight).y))
@@ -686,6 +708,13 @@ onInput("j", () => {
         }
            }
     }, 1)
+  if ((getTile(slashX, slashY)).find(sprite => sprite.type == tiktik)){
+    tiktikHealth -=1
+    if (tiktikHealth == 0){
+      getFirst(tiktik).remove()
+      updateCurrency(2)
+  }
+  }
 })
 
 onInput("k", () => {
@@ -723,7 +752,14 @@ afterInput(() => {
   }
   console.log(getFirst(player).x, getFirst(player).y)
   checkInteraction(player, level)
-  checkHazard(player, acid, [8, 3])
+  
+  enemyInfo = levelsDir["R" + level][5]
+  console.log(enemyInfo)
+  if (enemyInfo){ // If there's an enemy/hazard listed as being in the current room
+    for (enemy in enemyInfo){
+      checkHazard(player, enemyInfo[enemy][0], enemyInfo[enemy][1])
+  }
+  }
   updateInv()
   if (lives == 0){
     setMap(levels[levels.length-1])
