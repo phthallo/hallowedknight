@@ -388,6 +388,17 @@ eeeeeeeeeeeeee
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee`,
   map `
+sssssssiisssss
+ssssssss.....s
+sssssssss....s
+sssssssssss..l
+sssssss......l
+sssssss....sss
+sssssss..sss..
+sssssss....p..
+sssssssssssskk`,
+  // DEATH
+  map `
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
@@ -396,7 +407,8 @@ eeeeeeeeeeeeee
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
-eeeeeeeeeeeeee`
+eeeeeeeeeeeeee`,
+
 ]
 
 // How to interpret the levelsDir => 
@@ -417,13 +429,14 @@ const levelsDir = {
   "R1": [
     [0, 9, 7], null, null, null, background
   ],
-  "R2": ["", [3, 10, 6], null, [0, 10, 2], background],
+  "R2": [[5, 10, 7], [3, 10, 6], null, [0, 10, 2], background],
   "R3": [null, "", [2, 1, 6],
     [4, 2, 1], backgroundGrass
   ],
   "R4": [
     [3, 4, 7], null, null, null, backgroundGrass
   ],
+  "R5": ["", "", "", "", background],
 };
 
 setMap(levels[level])
@@ -479,7 +492,7 @@ function checkInteraction(sprite1, lvl) {
     if (knightCoords.find(sprite => sprite.type == arr[roomDirection]) && (levelsDir[currentLevel][roomDirection])) {
       roomInfo = levelsDir[currentLevel][roomDirection]
       level = roomInfo[0]
-      //console.log("respawning in" + roomInfo[0] + "at" + roomInfo[1] + "," + roomInfo[2])
+      console.log("respawning in" + roomInfo[0] + "at" + roomInfo[1] + "," + roomInfo[2])
       setMap(levels[level])
       setBackground(levelsDir["R"+level][4])
       getFirst(sprite1).x = roomInfo[1]
@@ -507,9 +520,12 @@ function checkHazard(sprite, hazard, respawnCoords) {
 
 function checkGate(knight){
   gateCoords = getTile(getFirst(knight).x+1, (getFirst(knight).y))
-  if (gateCoords.find(sprite => sprite.type == keyGate)) {
-    console.log("Knight is standing to left of a keyGate")
-}
+  if (gateCoords.find(sprite => sprite.type == keyGate) && (inventory.includes("h"))) {
+    console.log("Knight is standing to left of a keyGate and has key")
+    inventory.splice(inventory.indexOf("h"), 1)
+    getFirst(keyGate).remove()
+  }
+  console.log(inventory)
 }
 
 function updateHealth(){
@@ -572,14 +588,17 @@ onInput("k", () => {
       color: color`2`})
       updateInv(key)
       updateCurrency(2)
-}})
+  }
+  checkGate(player)
+  updateInv()
+})
 
 
 afterInput(() => {
   console.log(getFirst(player).x, getFirst(player).y)
   checkInteraction(player, level)
   checkHazard(player, acid, [8, 3])
-  checkGate(player)
+  updateInv()
   if (lives == 0){
     setMap(levels[levels.length-1])
     addText("~GAME OVER~", {
