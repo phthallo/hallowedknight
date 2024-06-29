@@ -42,7 +42,21 @@ var money = 0
 var lastXInput = ""
 var tiktikHealth = 5
 
+var keyGet = false
+var key2Get = false
 var keyGateOpen = false
+
+
+const slashSFX = tune`
+177.5147928994083: C4/177.5147928994083 + B4/177.5147928994083,
+5502.958579881657`
+const hurtSFX = tune `
+140.18691588785046: G4-140.18691588785046 + E4-140.18691588785046,
+4345.794392523364`
+const deathSFX = tune `
+500: G5/500,
+15500`
+const gameSFX = tune ``
 
 setLegend(
   // UI ELEMENTS
@@ -622,6 +636,7 @@ function checkHazard(sprite, hazard, respawnCoords) {
   for (knightCoords in directions){
     if (directions[knightCoords].find(sprite => sprite.type == hazard)) {
       lives -= 1
+      playTune(hurtSFX)
       updateHealth()
       console.log(respawnCoords)
       getFirst(sprite).x = respawnCoords[0]
@@ -697,6 +712,7 @@ onInput("j", () => {
       } else {
       addSprite(slashX, slashY, leftSlash)
     }
+  playTune(slashSFX)
   setTimeout(() => {
     if (lastXInput == 1){
       for (sprite = 0; sprite < getAll(rightSlash).length; sprite++){
@@ -710,6 +726,7 @@ onInput("j", () => {
     }, 1)
   if ((getTile(slashX, slashY)).find(sprite => sprite.type == tiktik)){
     tiktikHealth -=1
+    playTune(hurtSFX)
     if (tiktikHealth == 0){
       getFirst(tiktik).remove()
       updateCurrency(2)
@@ -719,13 +736,17 @@ onInput("j", () => {
 
 onInput("k", () => {
   knightCoords = getTile(getFirst(player).x, getFirst(player).y)
-  if (knightCoords.find(sprite => sprite.type == chest)) {
+  if (knightCoords.find(sprite => sprite.type == chest && keyGet == false)) {
       addText("KEY obtained", {
       x: 0,
       y: 15,
       color: color`2`})
       updateInv(key)
       updateCurrency(2)
+      keyGet = true
+  } else if (knightCoords.find(sprite => sprite.type == chest && key2Get == false)){
+      updateCurrency(5)
+      key2Get = true
   }
   if (knightCoords.find(sprite=> sprite.type == dashStatue)){
       addText("DASH obtained", {
@@ -763,6 +784,8 @@ afterInput(() => {
   updateInv()
   if (lives == 0){
     setMap(levels[levels.length-1])
+    playTune(deathSFX)
+    clearText()
     addText("~GAME OVER~", {
       x: 5,
       y: 7,
