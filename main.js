@@ -452,7 +452,7 @@ s...ss.......s
 s............s
 s..ssss......s
 sp...........s
-ssssssssssskks`, // spawn room
+ssssssssssskks`, // R0: spawn room
   map `
 sssssssssssiis
 s...........ps
@@ -462,7 +462,7 @@ ssssssssss...s
 sssss........s
 sssss.....ssss
 sssss.......cs
-ssssssssssssss`, // room below spawn room w/ chest
+ssssssssssssss`, // R1: room below spawn room w/ chest
   map `
 ssssssssssiiis
 s........w...s
@@ -472,7 +472,7 @@ s...ssssss.s.s
 s.ssssssss...s
 jp...........s
 sss..........s
-ssssssssssskks`, // hub room between grass and stone
+ssssssssssskks`, // R2: hub room between grass and stone
   map `
 gggggggggggggg
 j............g
@@ -482,7 +482,7 @@ ggggggggg....g
 g....ggggg...g
 g.....ggggg.pl
 g......q....gg
-gkkggggggggggg`, // grass with acid lake
+gkkggggggggggg`, // R3: grass with acid lake
   map `
 giiggggggggggg
 ggp..........g
@@ -492,7 +492,7 @@ gggggggggggggg
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
-eeeeeeeeeeeeee`, // grass with chest
+eeeeeeeeeeeeee`, // R4: grass with chest
   map `
 sssssssiisssss
 ssssssss.....s
@@ -502,7 +502,7 @@ sssssss......l
 sssssss....sss
 sssssss..sss..
 sssssss....p..
-sssssssssssskk`, // room above hub room
+sssssssssssskk`, // R5: room above hub room
   map `
 ssssssssssssss
 s............s
@@ -512,7 +512,17 @@ jpss....ssssss
 sss..........s
 s...ss.......s
 s...........fs
-ssssssssssssss`, // dash room
+ssssssssssssss`, // R6: dash room
+  map `
+j.........g..l
+gggg......g.pl
+........ggg.gg
+.....gg...g.gg
+............gg
+gg...gg.....gg
+g...........gg
+aaaaaaaaaagggg
+aaaaaaaaaagggg`, // R7: room after dash room
   // DEATH
   map `
 eeeeeeeeeeeeee
@@ -546,14 +556,15 @@ const levelsDir = {
     [0, 9, 7], null, null, null, background, null
   ],
   "R2": [[5, 10, 7], [3, 10, 6], null, [0, 10, 2], background, null],
-  "R3": [null, "", [2, 1, 6],
+  "R3": [null, [7, 13, 2], [2, 1, 6],
     [4, 2, 1], backgroundGrass, [[acid, [8, 3]], [tiktik, [10, 6]]]
   ],
   "R4": [
     [3, 4, 7], null, null, null, backgroundGrass, null
   ],
   "R5": ["", null, [6, 3, 4], [2, 11 , 1], background, null],
-  "R6": [null, [5, 12, 4], null, null, background, null],
+  "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]]],
+  "R7": [null, "", [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]]]
 };
 
 setMap(levels[level])
@@ -609,7 +620,6 @@ function checkInteraction(sprite1, lvl) {
     if (knightCoords.find(sprite => sprite.type == arr[roomDirection]) && (levelsDir[currentLevel][roomDirection])) {
       roomInfo = levelsDir[currentLevel][roomDirection]
       level = roomInfo[0]
-      console.log("respawning in" + roomInfo[0] + "at" + roomInfo[1] + "," + roomInfo[2])
       setMap(levels[level])
       setBackground(levelsDir["R"+level][4])
       getFirst(sprite1).x = roomInfo[1]
@@ -638,7 +648,7 @@ function checkHazard(sprite, hazard, respawnCoords) {
       lives -= 1
       playTune(hurtSFX)
       updateHealth()
-      console.log(respawnCoords)
+      console.log(lives)
       getFirst(sprite).x = respawnCoords[0]
       getFirst(sprite).y = respawnCoords[1]
     }
@@ -649,7 +659,6 @@ function checkHazard(sprite, hazard, respawnCoords) {
 function checkGate(knight){
   gateCoords = getTile(getFirst(knight).x+1, (getFirst(knight).y))
   if (gateCoords.find(sprite => sprite.type == keyGate) && (inventory.includes("h"))) {
-    console.log("Knight is standing to left of a keyGate and has key")
     inventory.splice(inventory.indexOf("h"), 1)
     keyGateOpen = true
     getFirst(keyGate).remove()
@@ -775,14 +784,13 @@ afterInput(() => {
   checkInteraction(player, level)
   
   enemyInfo = levelsDir["R" + level][5]
-  console.log(enemyInfo)
   if (enemyInfo){ // If there's an enemy/hazard listed as being in the current room
     for (enemy in enemyInfo){
       checkHazard(player, enemyInfo[enemy][0], enemyInfo[enemy][1])
   }
   }
   updateInv()
-  if (lives == 0){
+  if (lives <= 0){
     setMap(levels[levels.length-1])
     playTune(deathSFX)
     clearText()
