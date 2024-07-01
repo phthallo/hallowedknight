@@ -32,18 +32,24 @@ const dashAbility="u"
 const rightSlash = "x"
 const leftSlash = "z"
 const tiktik = "q" 
+const grub = "o"
+const fakeWall = "r"
+
 const movementY = 2
 const movement = 1
-
 
 var lives = 3
 var inventory = []
 var money = 0
+var freedGrubs = 0
 var lastXInput = ""
 var tiktikHealth = 5
+var wallHealth = 3
+var grubJarHealth = 2
 
 var keyGet = false
 var key2Get = false
+var r1GrubSave = false
 var keyGateOpen = false
 
 
@@ -265,6 +271,40 @@ LLLLLLLLLLLLLLLL`],
 .........22222..
 ................
 ................`],
+  [fakeWall, bitmap `
+0000000000000000
+0111111111LL11L0
+01LLLL11000011L0
+0111LLL111L011L0
+0LL1LLL111100000
+0L1LLLL1000L11L0
+0L11111111LL11L0
+0LLLL111110LL000
+000001LLL00LL0L0
+011111LL01011000
+001L00111L00L1L0
+00000111L0L11010
+0L1LL1000LL01000
+0LLL11101010LLL0
+0LLL11LL1100LLL0
+0000000000000000`],
+  [grub, bitmap `
+.......00.......
+........0.......
+.....000000.....
+.00000000000000.
+0LLLLLLLLLLLLLL0
+0000000000000000
+.0............0.
+.0...DDD......0.
+.0..FF0DD.....0.
+.0..FFDDDD....0.
+.0....44DD....0.
+.0....44DD....0.
+.0...040DD....0.
+.0....44DDD...0.
+.000..040DDD000.
+...0000000000...`],
   [tiktik, bitmap `
 ................
 ................
@@ -437,7 +477,7 @@ FFFFFFFFFFFFFFFF`],
 0000000000000000`],
 )
 
-setSolids([player, stone, grass, keyGate])
+setSolids([player, stone, grass, keyGate, grub, fakeWall])
 
 setBackground(background)
 
@@ -460,8 +500,8 @@ s..sssssssssss
 s............s
 ssssssssss...s
 sssss........s
-sssss.....ssss
-sssss.......cs
+ssrrr.....ssss
+ssrrr.......cs
 ssssssssssssss`, // R1: room below spawn room w/ chest
   map `
 ssssssssssiiis
@@ -537,34 +577,41 @@ eeeeeeeeeeeeee`,
 
 ]
 
-// How to interpret the levelsDir => 
-// Each key refers to a room. The values of each room are represented
-// by a list. This list features the information for the room 
-// transition to the top, left, right and bottom transitions.
-// If the transition is null, there is no transition on that side of the room.
-// The first element of the list (e.g [2, 9, 7], with the first element being 2
-// represents the room that the transition leads to.
-// The second and third elements represent the coordinates of the spawn position.
-// This is because you can enter a room from multiple directions, and where the Knight
-// spawns should reflect that.
+/* How to interpret the levelsDir => 
+"roomNumber": [
+  [top transition info -> roomNumber, spawnX, spawnY], 
+  [left "], 
+  [right "], 
+  [bottom "],
+backgroundBitmap,
+[
+  [hazard, [respawnX, respawnY]]
+],
+[
+  [secret, [secretX, secretY]]
+]
+]
+*/
 
 const levelsDir = {
   "R0": [
-    [2, 9, 7], null, null, [1, 12, 1], background, [[tiktik, [1, 7]]]
+    [2, 9, 7], null, null, [1, 12, 1], background, [[tiktik, [1, 7]]], null
   ],
   "R1": [
-    [0, 9, 7], null, null, null, background, null
+    [0, 9, 7], null, null, null, background, null, [[grub, [2, 7], r1GrubSave]]
   ],
-  "R2": [[5, 10, 7], [3, 10, 6], null, [0, 10, 2], background, null],
-  "R3": [null, [7, 13, 2], [2, 1, 6],
-    [4, 2, 1], backgroundGrass, [[acid, [8, 3]], [tiktik, [10, 6]]]
+  "R2": [
+    [5, 10, 7], [3, 10, 6], null, [0, 10, 2], background, null, null
+  ],
+  "R3": [
+    null, [7, 13, 2], [2, 1, 6], [4, 2, 1], backgroundGrass, [[acid, [8, 3]], [tiktik, [10, 6]]], null
   ],
   "R4": [
-    [3, 4, 7], null, null, null, backgroundGrass, null
+    [3, 4, 7], null, null, null, backgroundGrass, null, null
   ],
-  "R5": ["", null, [6, 3, 4], [2, 11 , 1], background, null],
-  "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]]],
-  "R7": [null, "", [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]]]
+  "R5": ["", null, [6, 3, 4], [2, 11 , 1], background, null, null],
+  "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]], null],
+  "R7": [null, "", [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null]
 };
 
 setMap(levels[level])
@@ -622,6 +669,7 @@ function checkInteraction(sprite1, lvl) {
       level = roomInfo[0]
       setMap(levels[level])
       setBackground(levelsDir["R"+level][4])
+      spawnSecrets(levelsDir["R"+level][6])
       getFirst(sprite1).x = roomInfo[1]
       getFirst(sprite1).y = roomInfo[2]
       // Refresh UI
@@ -664,6 +712,14 @@ function checkGate(knight){
     getFirst(keyGate).remove()
   }
   console.log(inventory)
+}
+
+function spawnSecrets(secretInfo, respawnStatus){
+  if (secretInfo){
+    if (!(respawnStatus)){
+    addSprite(secretInfo[0][1][0], secretInfo[0][1][1], secretInfo[0][0])
+    }
+  }
 }
 
 function updateHealth(){
@@ -740,6 +796,29 @@ onInput("j", () => {
       getFirst(tiktik).remove()
       updateCurrency(2)
   }
+  }
+  if ((getTile(slashX, slashY)).find(sprite => sprite.type == fakeWall)){
+    wallHealth -= 1
+    playTune(hurtSFX)
+    if (wallHealth <= 0){
+      console.log("wall died")
+      for (let wall = 0; wall < getAll(fakeWall).length; wall++){
+        getAll(fakeWall)[wall].remove()
+    }
+    }
+  }
+  if ((getTile(slashX, slashY)).find(sprite => sprite.type == grub)){
+    grubJarHealth -= 1
+    playTune(hurtSFX)
+    if (grubJarHealth <= 0){
+      console.log("grub is freed!")
+      updateCurrency(3)
+      getFirst(grub).remove()
+      freedGrubs += 1
+      if (level == 1){
+        r1GrubSave = true
+      }
+    }
   }
 })
 
