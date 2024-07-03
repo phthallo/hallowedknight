@@ -35,7 +35,6 @@ const tiktik = "q"
 const grub = "o"
 const fakeWall = "r"
 const sign = "v"
-const backgroundSign = "y"
 
 const movementY = 2
 const movement = 1
@@ -68,23 +67,6 @@ const deathSFX = tune `
 const gameSFX = tune ``
 
 setLegend(
-  [backgroundSign, bitmap `
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC
-CCCCCCCCCCCCCCCC`],
   // UI ELEMENTS
   [maskLost, bitmap `
 ................
@@ -534,7 +516,7 @@ ssssssssssskks`, // R0: spawn room
 sssssssssssiis
 s...........ps
 s..sssssssssss
-s............s
+sv...........s
 ssssssssss...s
 sssss........s
 ssrrr.....ssss
@@ -587,8 +569,8 @@ s...ss.......s
 j..ss......q.s
 jpss....ssssss
 sss..........s
-s...ss.......s
-s...........fs
+s...ss.....f.s
+s.........vsvs
 ssssssssssssss`, // R6: dash room
   map `
 j.........g..l
@@ -600,17 +582,6 @@ gg...gg.....gg
 g...........gg
 aaaaaaaaaagggg
 aaaaaaaaaagggg`, // R7: room after dash room
-  // SIGN
- map `
-yyyyyyyyyyyyyy
-yyyyyyyyyyyyyy
-yyyyyyyyyyyyyy
-yyyyyyyyyyyyyy
-yyyyyyyyyyyyyy
-yyyyyyyyyyyyyy
-yyyyyyyyyyyyyy
-yyyyyyyyyyyyyy
-yyyyyyyyyyyyyy`, 
   // DEATH
   map `
 eeeeeeeeeeeeee
@@ -643,10 +614,10 @@ backgroundBitmap,
 
 const levelsDir = {
   "R0": [
-    [2, 9, 7], null, null, [1, 12, 1], background, [[tiktik, [1, 7]]], null, ["J: attack", [8,8]]
+    [2, 9, 7], null, null, [1, 12, 1], background, [[tiktik, [1, 7]]], null, ["J: attack", [0,15]]
   ],
   "R1": [
-    [0, 9, 7], null, null, null, background, null, [[grub, [2, 7], r1GrubSave]], ["Press K to interact", [3, 4]]
+    [0, 9, 7], null, null, null, background, null, [[grub, [2, 7], r1GrubSave]], ["K: interact", [0, 15]]
   ],
   "R2": [
     [5, 10, 7], [3, 10, 6], null, [0, 10, 2], background, null, null
@@ -658,7 +629,7 @@ const levelsDir = {
     [3, 4, 7], null, null, null, backgroundGrass, null, null
   ],
   "R5": ["", null, [6, 3, 4], [2, 11 , 1], background, null, [[grub, [4,7], r5GrubSave]]],
-  "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]], null],
+  "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]], null, ["L: dash", [0,15]]],
   "R7": [null, "", [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null]
 };
 
@@ -725,15 +696,17 @@ function checkInteraction(sprite1, lvl) {
           getFirst(keyGate).remove()
       }
       tiktikHealth = 5
+      refreshScreen()
+  }
+}
+}
+
+function refreshScreen(){
       clearText()
       updateHealth()
       updateInv()
       updateCurrency(0)
-      tutorialText(levelsDir["R"+level][7])
-
       addSprite(0,1, currency)
-  }
-}
 }
 
 function checkHazard(sprite, hazard, respawnCoords) {
@@ -760,6 +733,7 @@ function checkGate(knight){
     inventory.splice(inventory.indexOf("h"), 1)
     keyGateOpen = true
     getFirst(keyGate).remove()
+    refreshScreen()
   }
   console.log(inventory)
 }
@@ -848,7 +822,7 @@ onInput("j", () => {
         getAll(leftSlash)[sprite].remove()
         }
            }
-    }, 1)
+    }, 5)
   if ((getTile(slashX, slashY)).find(sprite => sprite.type == tiktik)){
     tiktikHealth -=1
     playTune(hurtSFX)
@@ -871,16 +845,21 @@ onInput("j", () => {
     grubJarHealth -= 1
     playTune(hurtSFX)
     if (grubJarHealth <= 0){
-      console.log("grub is freed!")
       getFirst(grub).remove()
-      freedGrubs += 1
       if (level == 1 && (!(r1GrubSave))){
         r1GrubSave = true
+        freedGrubs += 1
         updateCurrency(3)
+        addText("GRUB SAVED", {x:0, y:15, color: color `2`})
+        setTimeout(function() { refreshScreen() }, 2000)
       }
       if (level == 5 && (!(r5GrubSave))){
         r5GrubSave = true
+        freedGrubs += 1
         updateCurrency(3)
+        addText("GRUB saved", {x:0, y:15, color: color `2`})
+        setTimeout(function() { refreshScreen() }, 2000)
+
     }
   }
   }
@@ -895,28 +874,27 @@ onInput("k", () => {
       color: color`2`})
       updateInv(key)
       updateCurrency(2)
+      setTimeout(function() { refreshScreen() }, 2000)
       keyGet = true
   } else if (knightCoords.find(sprite => sprite.type == chest && key2Get == false)){
       updateCurrency(5)
       key2Get = true
   }
-  if (knightCoords.find(sprite=> sprite.type == dashStatue)){
+  if (knightCoords.find(sprite=> sprite.type == dashStatue) && !(inventory.includes(dashAbility))){
       addText("DASH obtained", {
       x: 0,
       y: 15,
       color: color`2`})
       updateInv(dashAbility)
-  }
-  if (knightCoords.find(sprite=> sprite.type == sign)){
-    currLevel = level
-    level = levels[levels.length-2] 
-    setMap(level)
-    setTimeout(function() { 
-      setMap(currLevel)
-}, 5000);  
+      setTimeout(function() { refreshScreen() }, 2000)
+
   }
   checkGate(player)
   updateInv()
+  if (knightCoords.find(sprite=> sprite.type == sign)){
+      tutorialText(levelsDir["R"+level][7])
+    setTimeout(function() { refreshScreen() }, 2000)
+    }
 })
 
 onInput("l", () => {
