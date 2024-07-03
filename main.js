@@ -34,6 +34,8 @@ const leftSlash = "z"
 const tiktik = "q" 
 const grub = "o"
 const fakeWall = "r"
+const sign = "v"
+const backgroundSign = "y"
 
 const movementY = 2
 const movement = 1
@@ -50,6 +52,7 @@ var grubJarHealth = 2
 var keyGet = false
 var key2Get = false
 var r1GrubSave = false
+var r5GrubSave = false
 var keyGateOpen = false
 
 
@@ -65,6 +68,23 @@ const deathSFX = tune `
 const gameSFX = tune ``
 
 setLegend(
+  [backgroundSign, bitmap `
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCC`],
   // UI ELEMENTS
   [maskLost, bitmap `
 ................
@@ -271,6 +291,23 @@ LLLLLLLLLLLLLLLL`],
 .........22222..
 ................
 ................`],
+  [sign, bitmap `
+................
+................
+................
+................
+................
+................
+...CCCCCCCCCC...
+...C00C000C0C...
+...CCCCCCCCCC...
+...C0CC0C000C...
+...CCCCCCCCCC...
+...CC0C00C00C...
+...CCCCCCCCCC...
+.......CC.......
+.......CC.......
+.......CC.......`],
   [fakeWall, bitmap `
 0000000000000000
 0111111111LL11L0
@@ -487,7 +524,7 @@ const levels = [
 ssssssssssiiis
 s............s
 s.......q....s
-s.....ssssssss
+s....vssssssss
 s...ss.......s
 s............s
 s..ssss......s
@@ -540,8 +577,8 @@ sssssssss....s
 sssssssssss..l
 sssssss......l
 sssssss....sss
-sssssss..sss..
-sssssss....p..
+ssssrrr..sss..
+ssssrrr....p..
 sssssssssssskk`, // R5: room above hub room
   map `
 ssssssssssssss
@@ -563,6 +600,17 @@ gg...gg.....gg
 g...........gg
 aaaaaaaaaagggg
 aaaaaaaaaagggg`, // R7: room after dash room
+  // SIGN
+ map `
+yyyyyyyyyyyyyy
+yyyyyyyyyyyyyy
+yyyyyyyyyyyyyy
+yyyyyyyyyyyyyy
+yyyyyyyyyyyyyy
+yyyyyyyyyyyyyy
+yyyyyyyyyyyyyy
+yyyyyyyyyyyyyy
+yyyyyyyyyyyyyy`, 
   // DEATH
   map `
 eeeeeeeeeeeeee
@@ -595,10 +643,10 @@ backgroundBitmap,
 
 const levelsDir = {
   "R0": [
-    [2, 9, 7], null, null, [1, 12, 1], background, [[tiktik, [1, 7]]], null
+    [2, 9, 7], null, null, [1, 12, 1], background, [[tiktik, [1, 7]]], null, ["J: attack", [8,8]]
   ],
   "R1": [
-    [0, 9, 7], null, null, null, background, null, [[grub, [2, 7], r1GrubSave]]
+    [0, 9, 7], null, null, null, background, null, [[grub, [2, 7], r1GrubSave]], ["Press K to interact", [3, 4]]
   ],
   "R2": [
     [5, 10, 7], [3, 10, 6], null, [0, 10, 2], background, null, null
@@ -609,7 +657,7 @@ const levelsDir = {
   "R4": [
     [3, 4, 7], null, null, null, backgroundGrass, null, null
   ],
-  "R5": ["", null, [6, 3, 4], [2, 11 , 1], background, null, null],
+  "R5": ["", null, [6, 3, 4], [2, 11 , 1], background, null, [[grub, [4,7], r5GrubSave]]],
   "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]], null],
   "R7": [null, "", [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null]
 };
@@ -681,6 +729,8 @@ function checkInteraction(sprite1, lvl) {
       updateHealth()
       updateInv()
       updateCurrency(0)
+      tutorialText(levelsDir["R"+level][7])
+
       addSprite(0,1, currency)
   }
 }
@@ -749,6 +799,16 @@ function updateCurrency(amount){
 })
 }
 
+function tutorialText(textInfo){
+  if (textInfo){
+    addText(String(textInfo[0]), { 
+    x: textInfo[1][0],
+    y: textInfo[1][1],
+    color: color`2`
+})
+  }
+}
+
 // Directions or smth yay
 onInput("w", () => {
   if (!(ceilingCheck(getFirst(player)))) {
@@ -812,13 +872,17 @@ onInput("j", () => {
     playTune(hurtSFX)
     if (grubJarHealth <= 0){
       console.log("grub is freed!")
-      updateCurrency(3)
       getFirst(grub).remove()
       freedGrubs += 1
-      if (level == 1){
+      if (level == 1 && (!(r1GrubSave))){
         r1GrubSave = true
+        updateCurrency(3)
       }
+      if (level == 5 && (!(r5GrubSave))){
+        r5GrubSave = true
+        updateCurrency(3)
     }
+  }
   }
 })
 
@@ -842,6 +906,14 @@ onInput("k", () => {
       y: 15,
       color: color`2`})
       updateInv(dashAbility)
+  }
+  if (knightCoords.find(sprite=> sprite.type == sign)){
+    currLevel = level
+    level = levels[levels.length-2] 
+    setMap(level)
+    setTimeout(function() { 
+      setMap(currLevel)
+}, 5000);  
   }
   checkGate(player)
   updateInv()
