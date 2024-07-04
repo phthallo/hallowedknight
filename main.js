@@ -35,6 +35,7 @@ const tiktik = "q"
 const grub = "o"
 const fakeWall = "r"
 const sign = "v"
+const baba = "y"
 
 const movementY = 2
 const movement = 1
@@ -52,6 +53,7 @@ var keyGet = false
 var key2Get = false
 var r1GrubSave = false
 var r5GrubSave = false
+var r8GrubSave = false
 var keyGateOpen = false
 
 
@@ -273,6 +275,23 @@ LLLLLLLLLLLLLLLL`],
 .........22222..
 ................
 ................`],
+  [baba, bitmap`
+................
+................
+................
+................
+..........2.....
+......22..22....
+......222.22....
+...222222222....
+..22222222222...
+.2222222222022..
+.2222222202222..
+.2222222222222..
+..22222222222...
+..22.22.22.22...
+.222.22.22.22...
+.22..22..22.2...`],
   [sign, bitmap `
 ................
 ................
@@ -536,7 +555,7 @@ ssssssssssskks`, // R2: hub room between grass and stone
 gggggggggggggg
 j............g
 j............g
-gggaaaag.....g
+gggaaagg.....g
 ggggggggg....g
 g....ggggg...g
 g.....ggggg.pl
@@ -573,15 +592,25 @@ s...ss.....f.s
 s.........vsvs
 ssssssssssssss`, // R6: dash room
   map `
-j.........g..l
-gggg......g.pl
-........ggg.gg
-.....gg...g.gg
+j..........g.l
+ggg..g.....g.l
+.........ggg.g
+.....gg.....pg
 ............gg
-gg...gg.....gg
+gg..ggg.....gg
 g...........gg
-aaaaaaaaaagggg
-aaaaaaaaaagggg`, // R7: room after dash room
+aaaaaaaaaggggg
+aaaaaaaaaggggg`, // R7: room after acid lake room
+  map `
+ssssssssssssss
+s.....ss.....s
+s....ossy....s
+s...ssssss...s
+s............s
+s.ss..ss..ss.s
+s............s
+s........p..ss
+sssssskkssssss`, // R8: room above the room above hub room
   // DEATH
   map `
 eeeeeeeeeeeeee
@@ -623,14 +652,15 @@ const levelsDir = {
     [5, 10, 7], [3, 10, 6], null, [0, 10, 2], background, null, null
   ],
   "R3": [
-    null, [7, 13, 2], [2, 1, 6], [4, 2, 1], backgroundGrass, [[acid, [8, 3]], [tiktik, [10, 6]]], null
+    null, [7, 13, 3], [2, 1, 6], [4, 2, 1], backgroundGrass, [[acid, [8, 3]], [tiktik, [10, 6]]], null
   ],
   "R4": [
     [3, 4, 7], null, null, null, backgroundGrass, null, null
   ],
-  "R5": ["", null, [6, 3, 4], [2, 11 , 1], background, null, [[grub, [4,7], r5GrubSave]]],
+  "R5": [[8,8,7], null, [6, 3, 4], [2, 11 , 1], background, null, [[grub, [4,7], r5GrubSave]]],
   "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]], null, ["L: dash", [0,15]]],
-  "R7": [null, "", [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null]
+  "R7": [null, "", [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null],
+  "R8": [null, null, null, [5, 8, 1], background, null, null, [[grub, [5,2], r8GrubSave]]]
 };
 
 setMap(levels[level])
@@ -861,6 +891,14 @@ onInput("j", () => {
         setTimeout(function() { refreshScreen() }, 2000)
 
     }
+      if (level == 8 && (!(r5GrubSave))){
+        r8GrubSave = true
+        freedGrubs += 1
+        updateCurrency(3)
+        addText("GRUB saved", {x:0, y:15, color: color `2`})
+        setTimeout(function() { refreshScreen() }, 2000)
+    }
+
   }
   }
 })
@@ -899,7 +937,7 @@ onInput("k", () => {
 
 onInput("l", () => {
   if (inventory.includes(dashAbility)){
-      for (let i = 0; i <= 4; i++){
+      for (let i = 0; i < 4; i++){
         getFirst(player).x += lastXInput
       }
   }
@@ -908,6 +946,8 @@ onInput("l", () => {
 afterInput(() => {
   if (!(groundCheck(getFirst(player)))) {
     moveDown(getFirst(player))
+    checkInteraction(player, level)
+
   }
   console.log(getFirst(player).x, getFirst(player).y)
   checkInteraction(player, level)
