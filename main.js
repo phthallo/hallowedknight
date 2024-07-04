@@ -54,6 +54,7 @@ var key2Get = false
 var r1GrubSave = false
 var r5GrubSave = false
 var r8GrubSave = false
+var r9GrubSave = false 
 var keyGateOpen = false
 
 
@@ -604,14 +605,34 @@ aaaaaaaaaggggg`, // R7: room after acid lake room
   map `
 ssssssssssssss
 s.....ss.....s
-s....ossy....s
+s.....ssy....s
 s...ssssss...s
 s............s
 s.ss..ss..ss.s
 s............s
 s........p..ss
 sssssskkssssss`, // R8: room above the room above hub room
-  // DEATH
+  map `
+gggggggggggggg
+g...........pl
+g.gg......gggg
+g.....ggg.gggg
+g.............
+j...........gg
+gggg...gg.....
+aaaaaaaaaaaaaa
+aaaaaaaaaaaaaa`, // R9: platforming room after R7
+  map `
+eeegiiiiigeeee
+eeeg.....geeee
+eeeggg...geeee
+eeeg.....geeee
+eeeg...gggeeee
+eeeg.....geeee
+eeeggg...leeee
+eeeg..p..leeee
+eeegggggggeeee`, // R10: the final climb!
+  // GAME OVER
   map `
 eeeeeeeeeeeeee
 eeeeeeeeeeeeee
@@ -659,8 +680,10 @@ const levelsDir = {
   ],
   "R5": [[8,8,7], null, [6, 3, 4], [2, 11 , 1], background, null, [[grub, [4,7], r5GrubSave]]],
   "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]], null, ["L: dash", [0,15]]],
-  "R7": [null, "", [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null],
-  "R8": [null, null, null, [5, 8, 1], background, null, null, [[grub, [5,2], r8GrubSave]]]
+  "R7": [null, [9, 12, 1], [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null],
+  "R8": [null, null, null, [5, 8, 1], background, null, [[grub, [5,2], r8GrubSave]]],
+  "R9": [null, [10, 6, 12], [7, 0, 3], null, backgroundGrass, [[acid, [12,1]]], [[grub, [13, 4], r9GrubSave]]],
+  "R10": ["", null, null, null, backgroundGrass, null, null]
 };
 
 setMap(levels[level])
@@ -891,13 +914,21 @@ onInput("j", () => {
         setTimeout(function() { refreshScreen() }, 2000)
 
     }
-      if (level == 8 && (!(r5GrubSave))){
+      if (level == 8 && (!(r8GrubSave))){
         r8GrubSave = true
         freedGrubs += 1
         updateCurrency(3)
         addText("GRUB saved", {x:0, y:15, color: color `2`})
         setTimeout(function() { refreshScreen() }, 2000)
     }
+      if (level == 9 && (!(r9GrubSave))){
+        r8GrubSave = true
+        freedGrubs += 1
+        updateCurrency(3)
+        addText("GRUB saved", {x:0, y:15, color: color `2`})
+        setTimeout(function() { refreshScreen() }, 2000)
+    }
+
 
   }
   }
@@ -944,6 +975,10 @@ onInput("l", () => {
 })
 
 afterInput(() => {
+  if (level == 10){
+    setMap(levels[levels.length-1])
+    clearText()
+  }
   if (!(groundCheck(getFirst(player)))) {
     moveDown(getFirst(player))
     checkInteraction(player, level)
