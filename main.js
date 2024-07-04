@@ -57,6 +57,8 @@ var r8GrubSave = false
 var r9GrubSave = false 
 var keyGateOpen = false
 
+var gameWon = false
+
 
 const slashSFX = tune`
 177.5147928994083: C4/177.5147928994083 + B4/177.5147928994083,
@@ -67,7 +69,6 @@ const hurtSFX = tune `
 const deathSFX = tune `
 500: G5/500,
 15500`
-const gameSFX = tune ``
 
 setLegend(
   // UI ELEMENTS
@@ -516,7 +517,7 @@ FFFFFFFFFFFFFFFF`],
 0000000000000000`],
 )
 
-setSolids([player, stone, grass, keyGate, grub, fakeWall])
+setSolids([player, stone, grass, keyGate, grub, fakeWall, black])
 
 setBackground(background)
 
@@ -630,7 +631,7 @@ eeeg.....geeee
 eeeg...gggeeee
 eeeg.....geeee
 eeeggg...leeee
-eeeg..p..leeee
+eeeg....pleeee
 eeegggggggeeee`, // R10: the final climb!
   // GAME OVER
   map `
@@ -682,8 +683,8 @@ const levelsDir = {
   "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]], null, ["L: dash", [0,15]]],
   "R7": [null, [9, 12, 1], [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null],
   "R8": [null, null, null, [5, 8, 1], background, null, [[grub, [5,2], r8GrubSave]]],
-  "R9": [null, [10, 6, 12], [7, 0, 3], null, backgroundGrass, [[acid, [12,1]]], [[grub, [13, 4], r9GrubSave]]],
-  "R10": ["", null, null, null, backgroundGrass, null, null]
+  "R9": [null, [10, 7, 8], [7, 0, 3], null, backgroundGrass, [[acid, [12,1]]], [[grub, [13, 4], r9GrubSave]]],
+  "R10": [[11,2,3], null, null, null, backgroundGrass, null, null]
 };
 
 setMap(levels[level])
@@ -739,19 +740,19 @@ function checkInteraction(sprite1, lvl) {
     if (knightCoords.find(sprite => sprite.type == arr[roomDirection]) && (levelsDir[currentLevel][roomDirection])) {
       roomInfo = levelsDir[currentLevel][roomDirection]
       level = roomInfo[0]
-      setMap(levels[level])
-      setBackground(levelsDir["R"+level][4])
-      spawnSecrets(levelsDir["R"+level][6])
-      getFirst(sprite1).x = roomInfo[1]
-      getFirst(sprite1).y = roomInfo[2]
-      // Refresh UI
-      if (keyGateOpen==true && level == 2){
-          getFirst(keyGate).remove()
+        setMap(levels[level])
+        setBackground(levelsDir["R"+level][4])
+        spawnSecrets(levelsDir["R"+level][6])
+        getFirst(sprite1).x = roomInfo[1]
+        getFirst(sprite1).y = roomInfo[2]
+        // Refresh UI
+        if (keyGateOpen==true && level == 2){
+            getFirst(keyGate).remove()
+        }
+        tiktikHealth = 5
+        refreshScreen()
       }
-      tiktikHealth = 5
-      refreshScreen()
   }
-}
 }
 
 function refreshScreen(){
@@ -836,6 +837,24 @@ function tutorialText(textInfo){
   }
 }
 
+function gameWin(){
+    gameWon = true
+    setMap(levels[levels.length-1])
+    clearText()
+    completionRequirements = [inventory.includes(dashAbility), keyGet, key2Get, r1GrubSave, r5GrubSave, r8GrubSave, r9GrubSave]
+    console.log(completionRequirements.filter(Boolean))
+    completionPercent = Math.round((completionRequirements.filter(Boolean).length/completionRequirements.length)*100)
+    addText("~YOU WON~", {
+      x: 5,
+      y: 7,
+      color: color`2`})
+    addText(String(completionPercent)+"%", {
+      x: 5,
+      y: 9,
+      color: color`2`})
+
+}
+
 // Directions or smth yay
 onInput("w", () => {
   if (!(ceilingCheck(getFirst(player)))) {
@@ -903,7 +922,7 @@ onInput("j", () => {
         r1GrubSave = true
         freedGrubs += 1
         updateCurrency(3)
-        addText("GRUB SAVED", {x:0, y:15, color: color `2`})
+        addText("GRUB saved", {x:0, y:15, color: color `2`})
         setTimeout(function() { refreshScreen() }, 2000)
       }
       if (level == 5 && (!(r5GrubSave))){
@@ -975,31 +994,31 @@ onInput("l", () => {
 })
 
 afterInput(() => {
-  if (level == 10){
-    setMap(levels[levels.length-1])
-    clearText()
-  }
-  if (!(groundCheck(getFirst(player)))) {
-    moveDown(getFirst(player))
+  if (!(level >= 10)){
+    if (!(groundCheck(getFirst(player)))) {
+      moveDown(getFirst(player))  
+    }
+    console.log(getFirst(player).x, getFirst(player).y)
     checkInteraction(player, level)
-
+    enemyInfo = levelsDir["R" + level][5]
+    if (enemyInfo){ // If there's an enemy/hazard listed as being in the current room
+      for (enemy in enemyInfo){
+        checkHazard(player, enemyInfo[enemy][0], enemyInfo[enemy][1])
+    }
+    }
+    updateInv()
+    if (lives <= 0){
+      setMap(levels[levels.length-1])
+      playTune(deathSFX)
+      clearText()
+      addText("~GAME OVER~", {
+        x: 5,
+        y: 7,
+        color: color`2`})
   }
-  console.log(getFirst(player).x, getFirst(player).y)
-  checkInteraction(player, level)
-  
-  enemyInfo = levelsDir["R" + level][5]
-  if (enemyInfo){ // If there's an enemy/hazard listed as being in the current room
-    for (enemy in enemyInfo){
-      checkHazard(player, enemyInfo[enemy][0], enemyInfo[enemy][1])
-  }
-  }
-  updateInv()
-  if (lives <= 0){
-    setMap(levels[levels.length-1])
-    playTune(deathSFX)
-    clearText()
-    addText("~GAME OVER~", {
-      x: 5,
-      y: 7,
-      color: color`2`})
-}})
+        } else if (level == 10 && (getTile(getFirst(player).x, getFirst(player).y).find(sprite => sprite.type == "i"))){ 
+          gameWin()
+  } else {
+  //pass 
+}
+  })
