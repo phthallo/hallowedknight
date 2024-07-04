@@ -14,9 +14,16 @@ W: Jump
 A: Left
 D: Right
 J: Attack 
+K: Interact
+L: Dash (unlocked ability)
 
-To go through a downward transition, press any key
-Attacks can only be done in the direction you were last facing.
+To go through a downward transition, press any key.
+Attacks and dashes can only be done in the direction you were last facing.
+To interact with an item, stand in front of it and press K.
+The exception to this is the Key Gate (a black column). For this, you will need to obtain a key and interact next to it.
+The green things in jars are Grubs, collectibles from Hollow Knight. Free them by attacking the jar they are in.
+Dashes can be used to reach areas you were previously unable to reach.
+Keep an eye out for walls that look slightly different to the others.
 */
 const mask = "m"
 const maskLost = "d"
