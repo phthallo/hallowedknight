@@ -8,8 +8,16 @@ https://sprig.hackclub.com/gallery/getting_started
 @addedOn: 2024-00-00
 */
 
-// Definitely not inspired by Hollow Knight.
+/* Definitely not inspired by Hollow Knight.
+--Controls--
+W: Jump
+A: Left
+D: Right
+J: Attack 
 
+To go through a downward transition, press any key
+Attacks can only be done in the direction you were last facing.
+*/
 const mask = "m"
 const maskLost = "d"
 const player = "p"
@@ -630,8 +638,8 @@ eeeggg...geeee
 eeeg.....geeee
 eeeg...gggeeee
 eeeg.....geeee
-eeeggg...leeee
-eeeg....pleeee
+eeeggg...geeee
+eeeg....pgeeee
 eeegggggggeeee`, // R10: the final climb!
   // GAME OVER
   map `
@@ -663,6 +671,8 @@ backgroundBitmap,
 ]
 */
 
+
+// PLEASE DONT JUDGE THIS ABOMINATION OF CODE
 var levelsDir = {
   "R0": [
     [2, 9, 7], null, null, [1, 12, 1], background, [[tiktik, [1, 7]]], null, ["J: attack", [0,15]]
@@ -671,20 +681,20 @@ var levelsDir = {
     [0, 9, 7], null, null, null, background, null, [[grub, [2, 7], r1GrubSave]], ["K: interact", [0, 15]]
   ],
   "R2": [
-    [5, 10, 7], [3, 10, 6], null, [0, 10, 2], background, null, null
+    [5, 10, 7], [3, 10, 6], null, [0, 10, 2], background, null, null, null
   ],
   "R3": [
     null, [7, 13, 3], [2, 1, 6], [4, 2, 1], backgroundGrass, [[acid, [8, 3]], [tiktik, [10, 6]]], null
   ],
   "R4": [
-    [3, 4, 7], null, null, null, backgroundGrass, null, null
+    [3, 4, 7], null, null, null, backgroundGrass, null, null, null
   ],
-  "R5": [[8,9,7], null, [6, 3, 4], [2, 11 , 1], background, null, [[grub, [4,7], r5GrubSave]]],
+  "R5": [[8,9,7], null, [6, 3, 4], [2, 11 , 1], background, null, [[grub, [4,7], r5GrubSave]], null],
   "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]], null, ["L: dash", [0,15]]],
-  "R7": [null, [9, 12, 1], [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null],
-  "R8": [null, null, null, [5, 8, 1], background, null, [[grub, [5,2], r8GrubSave]]],
-  "R9": [null, [10, 7, 8], [7, 0, 0], null, backgroundGrass, [[acid, [12,1]]], [[grub, [13, 4], r9GrubSave]]],
-  "R10": [[11,2,3], null, null, null, backgroundGrass, null, null]
+  "R7": [null, [9, 12, 1], [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null, null],
+  "R8": [null, null, null, [5, 8, 1], background, null, [[grub, [5,2], r8GrubSave]], null],
+  "R9": [null, [10, 7, 8], [7, 0, 0], null, backgroundGrass, [[acid, [12,1]]], [[grub, [13, 4], r9GrubSave]], null],
+  "R10": [[11,2,3], null, null, null, backgroundGrass, null, null, null]
 };
 
 setMap(levels[level])
@@ -794,10 +804,24 @@ function checkGate(knight){
 
 function spawnSecrets(secretInfo){
   if (secretInfo){
-    console.log(secretInfo)
-    if (!(secretInfo[0][2])){
-      addSprite(secretInfo[0][1][0], secretInfo[0][1][1], secretInfo[0][0])
+    if (!(secretInfo[0][2])){ // If the secretObtained variable is fase
+      const secretType = secretInfo[0][0]; 
+      const [secretX, secretY] = secretInfo[0][1]; // secret spawn coordinates     
+      if (secretType === grub) { // the secret is  grub
+        if ((level === 1 && !r1GrubSave) ||
+            (level === 5 && !r5GrubSave) ||
+            (level === 8 && !r8GrubSave) ||
+            (level === 9 && !r9GrubSave)) {
+          addSprite(secretX, secretY, secretType);
+          console.log("addedSprite");
+        }
+      } else {
+        addSprite(secretX, secretY, secretType);
+        console.log("addedSprite");
+      }
     }
+  } else {
+    console.log("secret info false");
   }
 }
 
@@ -846,7 +870,7 @@ function gameWin(){
     console.log(completionRequirements.filter(Boolean))
     completionPercent = Math.round((completionRequirements.filter(Boolean).length/completionRequirements.length)*100)
     addText("// YOU WON //", {
-      x: 5,
+      x: 3,
       y: 7,
       color: color`2`})
     addText("Completion " + String(completionPercent)+"%", {
@@ -995,10 +1019,10 @@ onInput("l", () => {
 })
 
 afterInput(() => {
-  if (!(level >= 10)){
-    if (!(groundCheck(getFirst(player)))) {
+  if (!(groundCheck(getFirst(player)))) {
       moveDown(getFirst(player))  
     }
+  if (!(level >= 10)){
     console.log(getFirst(player).x, getFirst(player).y)
     checkInteraction(player, level)
     enemyInfo = levelsDir["R" + level][5]
