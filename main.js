@@ -663,7 +663,7 @@ backgroundBitmap,
 ]
 */
 
-const levelsDir = {
+var levelsDir = {
   "R0": [
     [2, 9, 7], null, null, [1, 12, 1], background, [[tiktik, [1, 7]]], null, ["J: attack", [0,15]]
   ],
@@ -679,11 +679,11 @@ const levelsDir = {
   "R4": [
     [3, 4, 7], null, null, null, backgroundGrass, null, null
   ],
-  "R5": [[8,8,7], null, [6, 3, 4], [2, 11 , 1], background, null, [[grub, [4,7], r5GrubSave]]],
+  "R5": [[8,9,7], null, [6, 3, 4], [2, 11 , 1], background, null, [[grub, [4,7], r5GrubSave]]],
   "R6": [null, [5, 12, 4], null, null, background, [[tiktik, [10,7]]], null, ["L: dash", [0,15]]],
   "R7": [null, [9, 12, 1], [3, 1, 2], null, backgroundGrass, [[acid, [11,6]]], null],
   "R8": [null, null, null, [5, 8, 1], background, null, [[grub, [5,2], r8GrubSave]]],
-  "R9": [null, [10, 7, 8], [7, 0, 3], null, backgroundGrass, [[acid, [12,1]]], [[grub, [13, 4], r9GrubSave]]],
+  "R9": [null, [10, 7, 8], [7, 0, 0], null, backgroundGrass, [[acid, [12,1]]], [[grub, [13, 4], r9GrubSave]]],
   "R10": [[11,2,3], null, null, null, backgroundGrass, null, null]
 };
 
@@ -792,10 +792,11 @@ function checkGate(knight){
   console.log(inventory)
 }
 
-function spawnSecrets(secretInfo, respawnStatus){
+function spawnSecrets(secretInfo){
   if (secretInfo){
-    if (!(respawnStatus)){
-    addSprite(secretInfo[0][1][0], secretInfo[0][1][1], secretInfo[0][0])
+    console.log(secretInfo)
+    if (!(secretInfo[0][2])){
+      addSprite(secretInfo[0][1][0], secretInfo[0][1][1], secretInfo[0][0])
     }
   }
 }
@@ -844,12 +845,12 @@ function gameWin(){
     completionRequirements = [inventory.includes(dashAbility), keyGet, key2Get, r1GrubSave, r5GrubSave, r8GrubSave, r9GrubSave]
     console.log(completionRequirements.filter(Boolean))
     completionPercent = Math.round((completionRequirements.filter(Boolean).length/completionRequirements.length)*100)
-    addText("~YOU WON~", {
+    addText("// YOU WON //", {
       x: 5,
       y: 7,
       color: color`2`})
-    addText(String(completionPercent)+"%", {
-      x: 5,
+    addText("Completion " + String(completionPercent)+"%", {
+      x: 3,
       y: 9,
       color: color`2`})
 
@@ -941,7 +942,7 @@ onInput("j", () => {
         setTimeout(function() { refreshScreen() }, 2000)
     }
       if (level == 9 && (!(r9GrubSave))){
-        r8GrubSave = true
+        r9GrubSave = true
         freedGrubs += 1
         updateCurrency(3)
         addText("GRUB saved", {x:0, y:15, color: color `2`})
